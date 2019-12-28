@@ -47,7 +47,7 @@ function copyToCanvas(video, ctx) {
 window.addEventListener('load', function() {
     var constraints = {
             video: {
-
+                facingMode: "environment"
             }
         },
         video = document.createElement('video'),
