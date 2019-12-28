@@ -1,0 +1,19 @@
+body{
+    color:#000; background-color:#fff;
+}
+input.form-control{
+    background-color:black; color:white; border:1px solid #00BFFF; height:60px;
+}
+.btn.btn-primary:not(:disabled):not(.disabled).active,
+.btn.btn-primary:not(:disabled):not(.disabled):active,
+.btn.btn-primary:hover,
+.btn{
+    width:100%; height:60px; background-color: #00BFFF;
+}
+.transfer{
+    font-size:68px; color: deepskyblue;
+}
+video,
+canvas{
+    max-width:100%;
+}
