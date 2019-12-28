@@ -1,64 +1,54 @@
-navigator.getUserMedia = navigator.getUserMedia || navigator.webkitGetUserMedia || navigator.mozGetUserMedia || navigator.msGetUserMedia;
-window.URL = window.URL || window.webkitURL || window.mozURL || window.msURL;
+var imageCapture = null;
+var deviceConfig = {
+    video: {
+        width: 480,
+        height: 640,
+        facingMode: "environment", /* may not work, see https://bugs.chromium.org/p/chromium/issues/detail?id=290161 */
+        deviceId: null
+    }
+};
 
-function getUserMedia(constraints, success, failure) {
-    navigator.getUserMedia(constraints, function(stream) {
-        var videoSrc = stream;
-        success.apply(null, [videoSrc]);
-    }, failure);
-}
+var imageCaptureConfig = {
+    fillLightMode: "torch", /* or "flash" */
+    focusMode: "continuous"
+};
 
+// get the available video input devices and choose the one that represents the backside camera
+navigator.mediaDevices.enumerateDevices()
+/* replacement for not working "facingMode: 'environment'": use filter to get the backside camera with the flash light */
+    .then(mediaDeviceInfos => mediaDeviceInfos.filter(mediaDeviceInfo => ((mediaDeviceInfo.kind === 'videoinput')/* && mediaDeviceInfo.label.includes("back")*/)))
+    .then(mediaDeviceInfos => {
+        console.log("mediaDeviceInfos[0].label: " + mediaDeviceInfos[0].label);
 
-function initCamera(constraints, video, callback) {
-    getUserMedia(constraints, function (src) {
-        video.srcObject = src;
-        video.addEventListener('loadeddata', function() {
-            var attempts = 10;
-
-            function checkVideo() {
-                if (attempts > 0) {
-                    if (video.videoWidth > 0 && video.videoHeight > 0) {
-                        console.log(video.videoWidth + "px x " + video.videoHeight + "px");
-                        video.play();
-                        callback();
-                    } else {
-                        window.setTimeout(checkVideo, 100);
-                    }
-                } else {
-                    callback('Unable to play video stream.');
-                }
-                attempts--;
-            }
-
-            checkVideo();
-        }, false);
-    }, function(e) {
-        console.log(e);
+        // get the device ID of the backside camera and use it for media stream initialization
+        deviceConfig.video.deviceId = mediaDeviceInfos[0].deviceId;
+        navigator.mediaDevices.getUserMedia(deviceConfig)
+            .then(_gotMedia)
+            .catch(err => console.log('getUserMedia() failed: ', err));
     });
+
+function takePhoto () {
+    imageCapture.takePhoto()
+        .then(blob => {
+            console.log('Photo taken: ' + blob.type + ', ' + blob.size + 'B');
+
+            // get URL for blob data and use as source for the image element
+            const image = document.querySelector('img');
+            image.src = URL.createObjectURL(blob);
+        })
+        .catch(err => console.error('takePhoto() failed: ', err));
 }
 
-function copyToCanvas(video, ctx) {
-    ( function frame() {
-        ctx.drawImage(video, 0, 0);
-        window.requestAnimationFrame(frame);
-    }());
+function _gotMedia (mediastream) {
+    // use the media stream as source for the video element
+    const video = document.querySelector('video');
+    video.srcObject = mediastream;
+
+    // create an ImageCapture from the first video track
+    const track = mediastream.getVideoTracks()[0];
+    imageCapture = new ImageCapture(track);
+
+    // set the image capture options (e.g. flash light, autofocus, ...)
+    imageCapture.setOptions(imageCaptureConfig)
+        .catch(err => console.error('setOptions(' + JSON.stringify(imageCaptureConfig) + ') failed: ', err));
 }
-
-window.addEventListener('load', function() {
-    var constraints = {
-            video: {
-                facingMode: "environment"
-            }
-        },
-        video = document.createElement('video'),
-        canvas = document.createElement('canvas');
-
-    document.body.appendChild(video);
-    document.body.appendChild(canvas);
-
-    initCamera(constraints, video, function() {
-        canvas.setAttribute('width', video.videoWidth);
-        canvas.setAttribute('height', video.videoHeight);
-        //copyToCanvas(video, canvas.getContext('2d'));
-    });
-}, false);
