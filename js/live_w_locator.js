@@ -283,16 +283,8 @@ $(function() {
 
     Quagga.onDetected(function(result) {
         var code = result.codeResult.code;
-
-        if (App.lastResult !== code) {
-            App.lastResult = code;
-            var $node = null, canvas = Quagga.canvas.dom.image;
-
-            $node = $('<li><div class="thumbnail"><div class="imgWrapper"><img /></div><div class="caption"><h4 class="code"></h4></div></div></li>');
-            $node.find("img").attr("src", canvas.toDataURL());
-            $node.find("h4.code").html(code);
-            $("#result_strip ul.thumbnails").prepend($node);
-        }
+        $("#result_strip .result_code").html(code);
+        navigator.vibrate(1000);
     });
 
 });
