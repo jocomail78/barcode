@@ -33,7 +33,6 @@ $(function() {
                 App.attachListeners();
                 App.checkCapabilities();
                 Quagga.start();
-                copyToCanvas(video, canvas.getContext('2d'));
             });
         },
         handleError: function(err) {
